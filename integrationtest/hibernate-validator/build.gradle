@@ -1,0 +1,138 @@
+plugins{
+    id "java"
+    id "application"
+    id "org.moditect.gradleplugin"
+}
+
+repositories {
+    mavenCentral()
+}
+
+group = "org.moditect"
+version = "2.0.0"
+
+targetCompatibility = JavaVersion.VERSION_1_9
+sourceCompatibility = JavaVersion.VERSION_1_9
+
+ext.moduleName = 'com.example'
+
+mainClassName = 'com.example.ValidationTest'
+jar {
+    manifest {
+        attributes("Automatic-Module-Name": moduleName)
+    }
+}
+
+def currentOS = org.gradle.internal.os.OperatingSystem.current()
+ext.platform = currentOS.windows ? 'win' : currentOS.linux ? 'linux' : 'mac'
+
+dependencies{
+    compile 'org.hibernate.validator:hibernate-validator:6.0.13.Final'
+    compile 'org.glassfish:javax.el:3.0.1-b08'
+}
+
+moditect {
+    addMainModuleInfo {
+        version = project.version
+        overwriteExistingFiles = false
+        // jdepsExtraArgs = ['-q']
+        module {
+            mainClass = mainClassName
+            moduleInfo {
+                name = moduleName
+                open = true
+            }
+        }
+    }
+    addDependenciesModuleInfo {
+        // jdepsExtraArgs = ['-q']
+        modules {
+            module {
+                artifact 'javax.validation:validation-api:2.0+'
+                moduleInfo {
+                    addServiceUses = true
+                }
+            }
+            module {
+                artifact 'org.glassfish:javax.el:3.0+'
+                moduleInfo {
+                    name = "java.el"
+                }
+            }
+            module {
+                artifact('com.fasterxml:classmate:1.3.4') {
+                    exclude module: 'joda-time'  // Not needed; just for test
+                }
+                moduleInfo {
+                    name = "com.fasterxml.classmate"
+                }
+            }
+            module {
+                artifact 'org.hibernate.validator:hibernate-validator'
+                additionalDependency 'javax.money:money-api:1+'
+                additionalDependency 'javax.persistence:javax.persistence-api:2.2'
+                additionalDependency 'joda-time:joda-time:2.10.1'
+                additionalDependency 'org.jsoup:jsoup:1.11.3'
+                additionalDependency 'com.thoughtworks.paranamer:paranamer:2.8'
+                additionalDependency "org.openjfx:javafx-base:11:$platform"
+                moduleInfo {
+                    name = "org.hibernate.validator"
+                    requires = '''
+                        static jboss.logging.annotations;
+                        transitive java.validation;
+                        *;
+                    '''
+                    exports = '''
+                        org.hibernate.validator.internal.util.logging to org.jboss.logging;
+                        !org.hibernate.validator.internal*;
+                        *;
+                    '''
+                    uses = '''
+                        javax.validation.ConstraintValidator;
+                        javax.validation.valueextraction.ValueExtractor;
+                    '''
+                }
+            }
+            module {
+                artifact group: "org.jboss.logging", name: "jboss-logging", version: '3.3.2.Final'
+                additionalDependency 'org.jboss.logmanager:jboss-logmanager:1.5+'
+                additionalDependency 'log4j:log4j:1.2+'
+                additionalDependency 'org.slf4j:slf4j-api:1.7+'
+                additionalDependency 'org.apache.logging.log4j:log4j-api:2.0+'
+                moduleInfo {
+                    name = "org.jboss.logging"
+                    requires = '''
+                        static jboss.logmanager;
+                        static log4j;
+                        static log4j.api;
+                        static slf4j.api;
+                        *;
+                    '''
+                }
+            }
+            module {
+                artifact 'org.jboss.logging:jboss-logging-processor:2.0.2.Final'
+                additionalDependency 'javax.annotation:javax.annotation-api:1+'
+                moduleInfo {
+                    name = "org.jboss.logging.processor"
+                    requires = '''
+                        static org.jboss.logging;
+                        static log4j;
+                        static log4j.api;
+                        static slf4j.api;
+                        *;
+                    '''
+                }
+            }
+        }
+    }
+    createRuntimeImage {
+        modules = ['com.example', 'org.hibernate.validator']
+        launcher {
+            name = 'validationTest'
+            module = 'com.example'
+        }
+        compression = 2
+        stripDebug = true
+    }
+}
