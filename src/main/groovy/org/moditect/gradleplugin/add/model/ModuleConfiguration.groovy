@@ -27,6 +27,7 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.moditect.gradleplugin.ModitectPlugin
 import org.moditect.gradleplugin.Util
+import org.moditect.gradleplugin.common.ModuleId
 
 import static org.gradle.util.ConfigureUtil.configure
 
@@ -35,12 +36,16 @@ import static org.gradle.util.ConfigureUtil.configure
 class ModuleConfiguration extends AbstractModuleConfiguration {
     private static final Logger LOGGER = Logging.getLogger(ModuleConfiguration)
 
-    static final String MAIN_CFG_PREFIX = 'moditectAddMain'
+    static final String PRIMARY_CFG_PREFIX = 'moditectAddPrimary'
+    static final String MODULE_CFG_PREFIX = 'moditectAddModule'
 
     private final int index
 
-    private Configuration mainConfig
-    Dependency mainDependency
+    String moduleConfigName
+    private Configuration moduleConfig
+    private Configuration primaryConfig
+    Dependency primaryDependency
+    final Set<Dependency> additionalDependencies = []
 
     ModuleConfiguration(Project project, int index, Closure closure) {
         super(project)
@@ -56,35 +61,70 @@ class ModuleConfiguration extends AbstractModuleConfiguration {
     }
 
     Dependency artifact(Object dependencyNotation) {
-        LOGGER.info "Creating mainDependency of $shortName from: $dependencyNotation"
+        LOGGER.info "Creating primaryDependency of $shortName from: $dependencyNotation"
 
-        if(mainConfig) throw new GradleException("Multiple artifact() calls in $shortName")
+        if(primaryConfig) throw new GradleException("Multiple artifact() calls in $shortName")
 
-        def mainConfigName = MAIN_CFG_PREFIX + index
-        this.mainConfig = project.configurations.create(mainConfigName)
+        def primaryConfigName = PRIMARY_CFG_PREFIX + index
+        this.primaryConfig = project.configurations.create(primaryConfigName)
 
         def notation = Util.getAdjustedDependencyNotation(project, dependencyNotation)
-        mainDependency = project.dependencies.add(mainConfigName, notation)
-        if(mainDependency instanceof ModuleDependency) {
-            ((ModuleDependency)mainDependency).transitive = false
+        primaryDependency = project.dependencies.add(primaryConfigName, notation)
+        if(primaryDependency instanceof ModuleDependency) {
+            ((ModuleDependency)primaryDependency).transitive = false
         }
+
+        this.moduleConfigName = MODULE_CFG_PREFIX + index
+        this.moduleConfig = project.configurations.create(moduleConfigName)
+        project.dependencies.add(moduleConfigName, notation)
 
         project.dependencies.add(ModitectPlugin.FULL_CONFIGURATION_NAME, notation)
     }
 
+    @Override
     File getInputJar() {
-        mainArtifact.file
+        primaryArtifact.file
     }
 
+    @Override
     String getVersion() {
-        mainArtifact.moduleVersion.id.version
+        primaryArtifact.moduleVersion.id.version
     }
 
-    private ResolvedArtifact getMainArtifact() {
-        if(!mainConfig) throw new GradleException("No artifact declaration found in $shortName")
-        def artifacts = mainConfig.resolvedConfiguration.resolvedArtifacts
-        LOGGER.info "artifacts of $mainConfig.name: $artifacts"
+    @Lazy private volatile ResolvedArtifact primaryArtifact = { retrievePrimaryArtifact() }()
+    private ResolvedArtifact retrievePrimaryArtifact() {
+        if(!primaryConfig) throw new GradleException("No artifact declaration found in $shortName")
+        def artifacts = primaryConfig.resolvedConfiguration.resolvedArtifacts
+        LOGGER.info "artifacts of $primaryConfig.name: $artifacts"
         artifacts.find { artifact -> !Util.isEmptyJar(artifact.file) }
+    }
+
+    @Lazy private volatile Set<ResolvedArtifact> moduleArtifacts = { retrieveModuleArtifacts() }()
+    private Set<ResolvedArtifact> retrieveModuleArtifacts() {
+        if(!moduleConfig) throw new GradleException("No artifact declaration found in $shortName")
+        def artifacts = moduleConfig.resolvedConfiguration.resolvedArtifacts
+        LOGGER.info "artifacts of $moduleConfigName: $artifacts"
+        artifacts
+    }
+
+    @Lazy private volatile Set<org.eclipse.aether.graph.Dependency> aetherDependencies = { retrieveAetherDependencies() }()
+    private Set<org.eclipse.aether.graph.Dependency> retrieveAetherDependencies() {
+        def dependencyResolver = Util.getModitectExtension(project).dependencyResolver
+        dependencyResolver.getDependencies(primaryDependency.group, primaryDependency.name, version)
+    }
+
+    void updateFullConfiguration() {
+        aetherDependencies.each {
+            def a = it.artifact
+            if(a.groupId == 'org.openjfx' && !a.classifier) {
+                LOGGER.info("Not added to $ModitectPlugin.FULL_CONFIGURATION_NAME: $a")
+            } else {
+                def notation = "$a.groupId:$a.artifactId:$a.version"
+                if(a.classifier) notation += ':' + Util.resolveClassifier(a.classifier)
+                def dep = project.dependencies.add(ModitectPlugin.FULL_CONFIGURATION_NAME, notation)
+                LOGGER.info("Added to $ModitectPlugin.FULL_CONFIGURATION_NAME: $dep")
+            }
+        }
     }
 
     Dependency additionalDependency(Object dependencyNotation, Closure closure) {
@@ -96,11 +136,29 @@ class ModuleConfiguration extends AbstractModuleConfiguration {
     Dependency additionalDependency(Object dependencyNotation) {
         LOGGER.info "Creating additionalDependency of $shortName from: $dependencyNotation"
         def dep = project.dependencies.add(ModitectPlugin.FULL_CONFIGURATION_NAME, dependencyNotation)
-        optionalDependencies.add(dep)
+        additionalDependencies.add(dep)
         dep
     }
 
     String getShortName() {
         "module #$index"
+    }
+
+    @Override
+    Set<ModuleId> getOptionalDependencies() {
+        List<ModuleId> moduleIds = moduleArtifacts.collect{ new ModuleId(it.moduleVersion.id.group, it.moduleVersion.id.name) }
+        Set<ModuleId> optionalModuleIds = []
+        def optionalDependencies = aetherDependencies.findAll { it.optional }
+        optionalDependencies.each { dep ->
+            def moduleId = new ModuleId(dep.artifact.groupId, dep.artifact.artifactId)
+            if(!moduleIds.contains(moduleId)) {
+                optionalModuleIds << moduleId
+            }
+        }
+        // optionalModuleIds.addAll(additionalDependencies)
+        LOGGER.info "optionalDependencies: $optionalDependencies"
+        LOGGER.info "moduleIds: $moduleIds"
+        LOGGER.info "optionalModuleIds: $optionalModuleIds"
+        return optionalModuleIds
     }
 }

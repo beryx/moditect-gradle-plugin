@@ -18,8 +18,10 @@ package org.moditect.gradleplugin.add.model
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.jvm.tasks.Jar
+import org.moditect.gradleplugin.common.ModuleId
 
 @CompileStatic
 @ToString(includeNames = true, includeSuperProperties = true)
@@ -37,5 +39,15 @@ class MainModuleConfiguration extends AbstractModuleConfiguration implements Ser
     File getInputJar() {
         Jar jarTask =  (Jar)project.tasks.findByName(JavaPlugin.JAR_TASK_NAME)
         jarTask.archiveFile.get().asFile
+    }
+
+    @Override
+    String getVersion() {
+        project.getVersion() as String
+    }
+
+    @Override
+    Set<ModuleId> getOptionalDependencies() {
+        [] as Set
     }
 }

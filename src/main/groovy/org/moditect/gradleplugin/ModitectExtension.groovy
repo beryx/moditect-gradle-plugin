@@ -16,8 +16,11 @@
 package org.moditect.gradleplugin
 
 import groovy.transform.CompileStatic
+import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPlugin
 import org.moditect.gradleplugin.add.AddDependenciesModuleInfoTask
 import org.moditect.gradleplugin.add.AddMainModuleInfoTask
+import org.moditect.gradleplugin.aether.DependencyResolver
 import org.moditect.gradleplugin.generate.GenerateModuleInfoTask
 import org.moditect.gradleplugin.image.CreateRuntimeImageTask
 
@@ -25,12 +28,17 @@ import static org.gradle.util.ConfigureUtil.configure
 
 @CompileStatic
 class ModitectExtension {
+    private final Project project
+
     final AddMainModuleInfoTask addMainModuleInfoTask
     final AddDependenciesModuleInfoTask addDependenciesModuleInfoTask
     final GenerateModuleInfoTask generateModuleInfoTask
     final CreateRuntimeImageTask createRuntimeImageTask
 
-    ModitectExtension(AddMainModuleInfoTask addMainModuleInfoTask,
+    final DependencyResolver dependencyResolver
+
+    ModitectExtension(Project project,
+                      AddMainModuleInfoTask addMainModuleInfoTask,
                       AddDependenciesModuleInfoTask addDependenciesModuleInfoTask,
                       GenerateModuleInfoTask generateModuleInfoTask,
                       CreateRuntimeImageTask createRuntimeImageTask) {
@@ -38,25 +46,37 @@ class ModitectExtension {
         this.addDependenciesModuleInfoTask = addDependenciesModuleInfoTask
         this.generateModuleInfoTask = generateModuleInfoTask
         this.createRuntimeImageTask = createRuntimeImageTask
+
+        this.dependencyResolver = new DependencyResolver(project)
+
+        project.afterEvaluate {
+            addDependenciesModuleInfoTask.modules.get().moduleConfigurations.each {cfg ->
+                cfg.updateFullConfiguration()
+            }
+            def cfg = project.configurations.getByName(ModitectPlugin.FULL_CONFIGURATION_NAME)
+            cfg.extendsFrom(project.configurations.getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME))
+            cfg.canBeResolved = true
+            cfg.resolve()
+        }
     }
 
     void addMainModuleInfoData(Closure closure) {
         configure(closure, addMainModuleInfoTask)
-
     }
 
-    void addDependenciesModuleInfoTask(Closure closure) {
+    void addDependenciesModuleInfo(Closure closure) {
         configure(closure, addDependenciesModuleInfoTask)
-
     }
 
-    void generateModuleInfoTask(Closure closure) {
+    void generateModuleInfo(Closure closure) {
         configure(closure, generateModuleInfoTask)
-
+        // TODO
+//        generateModuleInfoTask.modules.get().moduleConfigurations.each {cfg ->
+//            cfg.updateFullConfiguration()
+//        }
     }
 
-    void createRuntimeImageTask(Closure closure) {
+    void createRuntimeImage(Closure closure) {
         configure(closure, createRuntimeImageTask)
-
     }
 }

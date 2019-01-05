@@ -96,7 +96,7 @@ class GenerateModuleInfoTask extends DefaultTask {
         Map<ModuleId, String> assignedNamesByModule = [:]
         for(ModuleConfiguration moduleCfg : modules.get().moduleConfigurations) {
             def name = moduleCfg.moduleInfo?.name
-            def dep = moduleCfg.mainDependency
+            def dep = moduleCfg.primaryDependency
             if(name && dep) {
                 assignedNamesByModule[new ModuleId(group: dep.group, name: dep.name)] = name
             }

@@ -26,6 +26,7 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.moditect.gradleplugin.ModitectPlugin
 import org.moditect.gradleplugin.Util
+import org.moditect.gradleplugin.common.ModuleId
 import org.moditect.gradleplugin.common.ModuleInfoConfiguration
 
 import static org.gradle.util.ConfigureUtil.configure
@@ -35,17 +36,17 @@ import static org.gradle.util.ConfigureUtil.configure
 class ModuleConfiguration {
     private static final Logger LOGGER = Logging.getLogger(ModuleConfiguration)
 
-    static final String MAIN_CFG_PREFIX = 'moditectGenMain'
+    static final String PRIMARY_CFG_PREFIX = 'moditectGenPrimary'
 
     private final Project project
     private final int index
 
-    Dependency mainDependency
-    private Configuration mainConfig
+    Dependency primaryDependency
+    private Configuration primaryConfig
 
     final ModuleInfoConfiguration moduleInfo = new ModuleInfoConfiguration()
 
-    final Set<Dependency> optionalDependencies = []
+    final Set<Dependency> additionalDependencies = []
 
     ModuleConfiguration(Project project, int index, Closure closure) {
         this.project = project
@@ -62,25 +63,25 @@ class ModuleConfiguration {
     }
 
     Dependency artifact(Object dependencyNotation) {
-        LOGGER.info "Creating mainDependency of $shortName from: $dependencyNotation"
+        LOGGER.info "Creating primaryDependency of $shortName from: $dependencyNotation"
 
-        if(mainConfig) throw new GradleException("Multiple artifact() calls in $shortName")
+        if(primaryConfig) throw new GradleException("Multiple artifact() calls in $shortName")
 
-        def mainConfigName = MAIN_CFG_PREFIX + index
-        this.mainConfig = project.configurations.create(mainConfigName)
+        def basicConfigName = PRIMARY_CFG_PREFIX + index
+        this.primaryConfig = project.configurations.create(basicConfigName)
 
         def notation = Util.getAdjustedDependencyNotation(project, dependencyNotation)
-        mainDependency = project.dependencies.add(mainConfigName, notation)
-        if(mainDependency instanceof ModuleDependency) {
-            ((ModuleDependency)mainDependency).transitive = false
+        primaryDependency = project.dependencies.add(basicConfigName, notation)
+        if(primaryDependency instanceof ModuleDependency) {
+            ((ModuleDependency)primaryDependency).transitive = false
         }
         project.dependencies.add(ModitectPlugin.FULL_CONFIGURATION_NAME, notation)
     }
 
     File getInputJar() {
-        if(!mainConfig) throw new GradleException("No artifact declaration found in $shortName")
-        def artifacts = mainConfig.resolvedConfiguration.resolvedArtifacts
-        LOGGER.info "artifacts of $mainConfig.name: $artifacts"
+        if(!primaryConfig) throw new GradleException("No artifact declaration found in $shortName")
+        def artifacts = primaryConfig.resolvedConfiguration.resolvedArtifacts
+        LOGGER.info "artifacts of $primaryConfig.name: $artifacts"
         artifacts.find { artifact -> !Util.isEmptyJar(artifact.file) }.file
     }
 
@@ -93,7 +94,7 @@ class ModuleConfiguration {
     Dependency additionalDependency(Object dependencyNotation) {
         LOGGER.info "Creating additionalDependency of $shortName from: $dependencyNotation"
         def dep = project.dependencies.add(ModitectPlugin.FULL_CONFIGURATION_NAME, dependencyNotation)
-        optionalDependencies.add(dep)
+        additionalDependencies.add(dep)
         dep
     }
 
@@ -103,5 +104,10 @@ class ModuleConfiguration {
 
     String getShortName() {
         "module #$index"
+    }
+
+    Set<ModuleId> getOptionalDependencies() {
+        // TODO
+        [] as Set
     }
 }

@@ -83,14 +83,6 @@ class AddDependenciesModuleInfoTask extends AbstractAddModuleInfoTask {
                 outputDirectory.get().asFile.toPath(),
                 overwriteExistingFiles.get()
             ).run()
-
-//            if ( moduleConfiguration.getArtifact() != null ) {
-//                modularizedJars.put(
-//                        new ArtifactIdentifier( moduleConfiguration.getResolvedArtifact() ),
-//                        outputPath.resolve( inputFile.getFileName() )
-//                );
-//            }
-
         }
     }
 }

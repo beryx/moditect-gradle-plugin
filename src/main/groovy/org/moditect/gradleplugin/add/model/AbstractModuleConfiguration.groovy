@@ -19,7 +19,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.ToString
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Dependency
+import org.moditect.gradleplugin.common.ModuleId
 import org.moditect.gradleplugin.common.ModuleInfoConfiguration
 
 import static org.gradle.util.ConfigureUtil.configure
@@ -34,10 +34,10 @@ abstract class AbstractModuleConfiguration implements Serializable {
     String moduleInfoSource
     String mainClass
 
-    final Set<Dependency> optionalDependencies = []
-
     abstract String getShortName()
     abstract File getInputJar()
+    abstract String getVersion()
+    abstract Set<ModuleId> getOptionalDependencies()
 
     AbstractModuleConfiguration(Project project) {
         this.project = project

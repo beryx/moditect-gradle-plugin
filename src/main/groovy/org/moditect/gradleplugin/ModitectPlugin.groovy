@@ -41,6 +41,7 @@ class ModitectPlugin implements Plugin<Project> {
         def generateModuleInfoTask = project.tasks.create(GENERATE_MODULE_INFO_TASK_NAME, GenerateModuleInfoTask)
         def createRuntimeImageTask = project.tasks.create(CREATE_RUNTIME_TASK_NAME, CreateRuntimeImageTask)
         project.extensions.create(EXTENSION_NAME, ModitectExtension,
+                project,
                 addMainModuleInfoTask,
                 addDependenciesModuleInfoTask,
                 generateModuleInfoTask,

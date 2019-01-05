@@ -28,7 +28,6 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.moditect.gradleplugin.ModitectExtension
-import org.moditect.gradleplugin.ModitectPlugin
 import org.moditect.gradleplugin.Util
 import org.moditect.gradleplugin.add.model.AbstractModuleConfiguration
 import org.moditect.gradleplugin.add.model.ModuleConfiguration
@@ -80,17 +79,15 @@ abstract class AbstractAddModuleInfoTask extends DefaultTask {
     }
 
     protected String getModuleInfoSource(AbstractModuleConfiguration moduleCfg) {
-
         Map<ModuleId, String> assignedNamesByModule = [:]
-        ModitectExtension ext = (ModitectExtension)project.extensions.getByName(ModitectPlugin.EXTENSION_NAME)
+        ModitectExtension ext = Util.getModitectExtension(project)
         for(ModuleConfiguration cfg : ext.addDependenciesModuleInfoTask.modules.get().moduleConfigurations) {
             def name = cfg.moduleInfo?.name
-            def dep = cfg.mainDependency
+            def dep = cfg.primaryDependency
             if(name && dep) {
                 assignedNamesByModule[new ModuleId(group: dep.group, name: dep.name)] = name
             }
         }
-
         if ( moduleCfg.moduleInfo) {
             LOGGER.info("Generating module-info.java for $moduleCfg.shortName")
             GeneratedModuleInfo generatedModuleInfo = Util.generateModuleInfo(

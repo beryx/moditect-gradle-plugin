@@ -15,11 +15,11 @@
  */
 package org.moditect.gradleplugin
 
+import com.google.gradle.osdetector.OsDetector
 import groovy.transform.CompileStatic
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logger
@@ -101,7 +101,7 @@ class Util {
     static Set<DependencyDescriptor> getDependencyDescriptors(
             Configuration cfg,
             Map<ModuleId, String> assignedNamesByModule,
-            Set<Dependency> optionalDependencies) {
+            Set<ModuleId> optionalDependencies) {
         cfg.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
             try {
                 ModuleFinder.of( artifact.file.toPath() ).findAll()
@@ -110,7 +110,7 @@ class Util {
                 def assignedModuleName = assignedNamesByModule.get(new ModuleId(group: module.group, name: module.name))
                 return new DependencyDescriptor(artifact.file.toPath(), optional, assignedModuleName)
             } catch (Exception e) {
-                LOGGER.warn("Ignoring descriptor of: " + artifact.file.name)
+                LOGGER.warn("Ignoring descriptor of: " + artifact.file.name + " due to: $e")
                 return null
             }
         }.findAll{ it != null} as Set
@@ -126,11 +126,24 @@ class Util {
         if(tokens.length != 2) return dependencyNotation
         def cfg = project.configurations.getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)?.copyRecursive()
         if(!cfg) return dependencyNotation
+        cfg.extendsFrom(project.configurations.getByName(ModitectPlugin.FULL_CONFIGURATION_NAME).copyRecursive())
         cfg.canBeResolved = true
         cfg.resolve()
         String version = cfg.resolvedConfiguration.resolvedArtifacts*.moduleVersion*.id?.find { it.group == tokens[0] && it.name == tokens[1] }?.version
         if(!version) throw new GradleException("Cannot determine version of $dependencyNotation")
         LOGGER.info "Found version $version for $dependencyNotation"
         return "$dependencyNotation:$version"
+    }
+
+    static ModitectExtension getModitectExtension(Project project) {
+        (ModitectExtension)project.extensions.getByName(ModitectPlugin.EXTENSION_NAME)
+    }
+
+    static String resolveClassifier(String classifier) {
+        if(classifier == '${os.detected.classifier}') {
+            def os = new OsDetector()
+            return os.classifier
+        }
+        classifier
     }
 }
