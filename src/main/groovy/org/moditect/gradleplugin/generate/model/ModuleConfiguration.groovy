@@ -22,6 +22,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ModuleDependency
+import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.moditect.gradleplugin.ModitectPlugin
@@ -85,6 +86,14 @@ class ModuleConfiguration {
         artifacts.find { artifact -> !Util.isEmptyJar(artifact.file) }.file
     }
 
+    @Lazy private volatile Set<ResolvedArtifact> moduleArtifacts = { retrieveModuleArtifacts() }()
+    private Set<ResolvedArtifact> retrieveModuleArtifacts() {
+        if(!primaryConfig) throw new GradleException("No artifact declaration found in $shortName")
+        def artifacts = primaryConfig.resolvedConfiguration.resolvedArtifacts
+        LOGGER.info "artifacts of $primaryConfig.name: $artifacts"
+        artifacts
+    }
+
     @Lazy private volatile Set<org.eclipse.aether.graph.Dependency> aetherDependencies = { retrieveAetherDependencies() }()
     private Set<org.eclipse.aether.graph.Dependency> retrieveAetherDependencies() {
         def dependencyResolver = Util.getModitectExtension(project).dependencyResolver
@@ -127,7 +136,22 @@ class ModuleConfiguration {
     }
 
     Set<ModuleId> getOptionalDependencies() {
-        // TODO
-        [] as Set
+        List<ModuleId> moduleIds = moduleArtifacts.collect{ new ModuleId(it.moduleVersion.id.group, it.moduleVersion.id.name) }
+        Set<ModuleId> optionalModuleIds = []
+        def optionalDependencies = aetherDependencies.findAll { it.optional }
+        optionalDependencies.each { dep ->
+            def moduleId = new ModuleId(dep.artifact.groupId, dep.artifact.artifactId)
+            if(!moduleIds.contains(moduleId)) {
+                optionalModuleIds << moduleId
+            }
+        }
+        additionalDependencies.each { dep ->
+            optionalModuleIds.add(new ModuleId(dep.group, dep.name))
+        }
+        LOGGER.info "optionalDependencies: $optionalDependencies"
+        LOGGER.info "moduleIds: $moduleIds"
+        LOGGER.info "optionalModuleIds: $optionalModuleIds"
+        return optionalModuleIds
+
     }
 }

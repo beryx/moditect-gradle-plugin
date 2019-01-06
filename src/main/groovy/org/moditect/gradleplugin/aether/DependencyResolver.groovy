@@ -103,8 +103,7 @@ class DependencyResolver {
     private static RepositorySystemSession newSession(RepositorySystem system ) {
         def session = MavenRepositorySystemUtils.newSession();
 
-        // TODO - use Gradle local repo
-        def localRepo = new LocalRepository( "target/local-repo" );
+        def localRepo = new LocalRepository( "build/local-repo" );
         session.localRepositoryManager = system.newLocalRepositoryManager( session, localRepo )
         session.dependencySelector = new AndDependencySelector(
                 new ScopeDependencySelector(['compile', 'provided'], ['test', 'system']),

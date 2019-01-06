@@ -63,13 +63,13 @@ class AddMainModuleInfoTask extends AbstractAddModuleInfoTask {
         def inputJar = mainModule.get().inputJar
         def outputDir = outputDirectory.get().asFile
         new AddModuleInfo(
-            getModuleInfoSource(moduleCfg),
-            moduleCfg.mainClass,
-            project.version as String,
-            inputJar.toPath(),
-            outputDir.toPath(),
-                null, // TODO: jvmVersion
-            overwriteExistingFiles.get()
+                getModuleInfoSource(moduleCfg),
+                moduleCfg.mainClass,
+                project.version as String,
+                inputJar.toPath(),
+                outputDir.toPath(),
+                jvmVersion.present ? jvmVersion.get() : null,
+                overwriteExistingFiles.get()
         ).run()
         copyModularizedJar(outputDir, inputJar)
     }

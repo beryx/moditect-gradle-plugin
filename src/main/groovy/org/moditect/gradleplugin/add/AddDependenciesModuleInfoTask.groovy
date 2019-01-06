@@ -80,13 +80,13 @@ class AddDependenciesModuleInfoTask extends AbstractAddModuleInfoTask {
 
         for(ModuleConfiguration moduleCfg : modules.get().moduleConfigurations) {
             new AddModuleInfo(
-                getModuleInfoSource(moduleCfg),
-                moduleCfg.mainClass,
-                moduleCfg.version,
-                moduleCfg.inputJar.toPath(),
-                outputDirectory.get().asFile.toPath(),
-                    null, // TODO: jvmVersion
-                overwriteExistingFiles.get()
+                    getModuleInfoSource(moduleCfg),
+                    moduleCfg.mainClass,
+                    moduleCfg.version,
+                    moduleCfg.inputJar.toPath(),
+                    outputDirectory.get().asFile.toPath(),
+                    jvmVersion.present ? jvmVersion.get() : null,
+                    overwriteExistingFiles.get()
             ).run()
         }
     }
