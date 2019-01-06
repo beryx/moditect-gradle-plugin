@@ -130,7 +130,6 @@ moditect {
             }
             module {
                 artifact "io.netty:netty-transport-native-kqueue:$nettyVersion"
-                additionalDependency "io.netty:netty-transport-native-unix-common:$nettyVersion"
                 moduleInfo {
                     name = 'io.netty.channel.kqueue'
                 }
