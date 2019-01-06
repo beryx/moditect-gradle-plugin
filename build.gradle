@@ -9,9 +9,12 @@ group = 'org.moditect'
 version = '1.0.0-SNAPSHOT'
 
 repositories {
-    jcenter()
     mavenCentral()
+    jcenter()
     gradlePluginPortal()
+    flatDir {
+        dirs "${rootProject.projectDir}/lib"
+    }
 }
 
 sourceCompatibility = 1.8
@@ -39,7 +42,11 @@ dependencies {
 
     implementation "gradle.plugin.com.google.gradle:osdetector-gradle-plugin:1.6.1"
 
-    implementation 'org.moditect:moditect:1.0.0.Beta1'
+    // TODO - use the artifact from Maven Central when it becomes available
+    implementation 'com.github.moditect:moditect:1.0.0.Local'
+    implementation 'com.github.javaparser:javaparser-core:3.5.0'
+    // implementation 'com.github.moditect:moditect:1.0.0'
+
     implementation 'org.apache.maven:maven-aether-provider:3.3.9'
     implementation "org.eclipse.aether:aether-connector-basic:$aetherVersion"
     implementation "org.eclipse.aether:aether-transport-file:$aetherVersion"

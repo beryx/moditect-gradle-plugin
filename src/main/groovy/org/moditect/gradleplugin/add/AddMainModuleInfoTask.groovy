@@ -17,11 +17,13 @@ package org.moditect.gradleplugin.add
 
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.WorkResult
 import org.moditect.commands.AddModuleInfo
@@ -66,6 +68,7 @@ class AddMainModuleInfoTask extends AbstractAddModuleInfoTask {
             project.version as String,
             inputJar.toPath(),
             outputDir.toPath(),
+                null, // TODO: jvmVersion
             overwriteExistingFiles.get()
         ).run()
         copyModularizedJar(outputDir, inputJar)

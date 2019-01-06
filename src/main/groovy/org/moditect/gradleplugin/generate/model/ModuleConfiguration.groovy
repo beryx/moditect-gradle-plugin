@@ -85,6 +85,26 @@ class ModuleConfiguration {
         artifacts.find { artifact -> !Util.isEmptyJar(artifact.file) }.file
     }
 
+    @Lazy private volatile Set<org.eclipse.aether.graph.Dependency> aetherDependencies = { retrieveAetherDependencies() }()
+    private Set<org.eclipse.aether.graph.Dependency> retrieveAetherDependencies() {
+        def dependencyResolver = Util.getModitectExtension(project).dependencyResolver
+        dependencyResolver.getDependencies(primaryDependency.group, primaryDependency.name, primaryDependency.version)
+    }
+
+    void updateFullConfiguration() {
+        aetherDependencies.each {
+            def a = it.artifact
+            if(a.groupId == 'org.openjfx' && !a.classifier) {
+                LOGGER.info("Not added to $ModitectPlugin.FULL_CONFIGURATION_NAME: $a")
+            } else {
+                def notation = "$a.groupId:$a.artifactId:$a.version"
+                if(a.classifier) notation += ':' + Util.resolveClassifier(a.classifier)
+                def dep = project.dependencies.add(ModitectPlugin.FULL_CONFIGURATION_NAME, notation)
+                LOGGER.info("Added to $ModitectPlugin.FULL_CONFIGURATION_NAME: $dep")
+            }
+        }
+    }
+
     Dependency additionalDependency(Object dependencyNotation, Closure closure) {
         def dependency = additionalDependency(dependencyNotation)
         configure(closure, dependency)

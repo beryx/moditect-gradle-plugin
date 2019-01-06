@@ -24,6 +24,7 @@ import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
+import org.moditect.gradleplugin.ModitectExtension
 import org.moditect.gradleplugin.Util
 import org.moditect.gradleplugin.common.ModuleId
 import org.moditect.gradleplugin.generate.model.ModuleConfiguration
@@ -48,6 +49,9 @@ class GenerateModuleInfoTask extends DefaultTask {
     @Internal
     final Property<ModuleList> modules
 
+    @Internal
+    @Lazy volatile Map<ModuleId, String> assignedNamesByModules = { retrieveAssignedNamesByModules() }()
+
     static class ModuleList implements Serializable {
         transient private final Project project
         final List<ModuleConfiguration> moduleConfigurations = []
@@ -70,7 +74,6 @@ class GenerateModuleInfoTask extends DefaultTask {
         group = 'moditect'
 
         workingDirectory = createDirectoryProperty(project)
-        workingDirectory.set(project.file("$project.buildDir/moditect"))
 
         outputDirectory = createDirectoryProperty(project)
         outputDirectory.set(project.file("$project.buildDir/generated-sources/modules"))
@@ -89,27 +92,35 @@ class GenerateModuleInfoTask extends DefaultTask {
     @TaskAction
     void generateModuleInfo() {
         LOGGER.info "Generating moduleInfo for: ${modules.get()}"
-
         Util.createDirectory(workingDirectory)
         Util.createDirectory(outputDirectory)
 
-        Map<ModuleId, String> assignedNamesByModule = [:]
-        for(ModuleConfiguration moduleCfg : modules.get().moduleConfigurations) {
-            def name = moduleCfg.moduleInfo?.name
-            def dep = moduleCfg.primaryDependency
-            if(name && dep) {
-                assignedNamesByModule[new ModuleId(group: dep.group, name: dep.name)] = name
-            }
-        }
+        def artifactsInfo  = Util.getModitectExtension(project).artifactsInfo
         for(ModuleConfiguration moduleCfg : modules.get().moduleConfigurations) {
             Util.generateModuleInfo(
                     workingDirectory.get().asFile,
                     outputDirectory.get().asFile,
                     moduleCfg.moduleInfo,
                     moduleCfg.inputJar,
-                    Util.getDependencyDescriptors(Util.getFullConfiguration(project), assignedNamesByModule, moduleCfg.optionalDependencies),
+                    Util.getDependencyDescriptors(
+                            artifactsInfo.fullFixedArtifactDescriptors,
+                            artifactsInfo.assignedNamesByModules,
+                            moduleCfg.optionalDependencies
+                    ),
                     jdepsExtraArgs.get() as List<String>
             )
         }
+    }
+
+    private Map<ModuleId, String> retrieveAssignedNamesByModules() {
+        Map<ModuleId, String> assignedNamesByModule = [:]
+        for (ModuleConfiguration moduleCfg : modules.get().moduleConfigurations) {
+            def name = moduleCfg.moduleInfo?.name
+            def dep = moduleCfg.primaryDependency
+            if (name && dep) {
+                assignedNamesByModule[new ModuleId(group: dep.group, name: dep.name)] = name
+            }
+        }
+        assignedNamesByModule
     }
 }

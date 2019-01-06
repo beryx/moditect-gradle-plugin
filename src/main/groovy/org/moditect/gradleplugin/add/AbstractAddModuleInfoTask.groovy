@@ -62,7 +62,6 @@ abstract class AbstractAddModuleInfoTask extends DefaultTask {
         group = 'moditect'
 
         workingDirectory = createDirectoryProperty(project)
-        workingDirectory.set(project.file("$project.buildDir/moditect"))
 
         outputDirectory = createDirectoryProperty(project)
         outputDirectory.set(project.file("$project.buildDir/modules"))
@@ -79,15 +78,7 @@ abstract class AbstractAddModuleInfoTask extends DefaultTask {
     }
 
     protected String getModuleInfoSource(AbstractModuleConfiguration moduleCfg) {
-        Map<ModuleId, String> assignedNamesByModule = [:]
-        ModitectExtension ext = Util.getModitectExtension(project)
-        for(ModuleConfiguration cfg : ext.addDependenciesModuleInfoTask.modules.get().moduleConfigurations) {
-            def name = cfg.moduleInfo?.name
-            def dep = cfg.primaryDependency
-            if(name && dep) {
-                assignedNamesByModule[new ModuleId(group: dep.group, name: dep.name)] = name
-            }
-        }
+        def artifactsInfo  = Util.getModitectExtension(project).artifactsInfo
         if ( moduleCfg.moduleInfo) {
             LOGGER.info("Generating module-info.java for $moduleCfg.shortName")
             GeneratedModuleInfo generatedModuleInfo = Util.generateModuleInfo(
@@ -95,7 +86,11 @@ abstract class AbstractAddModuleInfoTask extends DefaultTask {
                     tmpDirectory.get().asFile,
                     moduleCfg.moduleInfo,
                     moduleCfg.inputJar,
-                    Util.getDependencyDescriptors(Util.getFullConfiguration(project), assignedNamesByModule, moduleCfg.optionalDependencies),
+                    Util.getDependencyDescriptors(
+                            artifactsInfo.fullFixedArtifactDescriptors,
+                            artifactsInfo.assignedNamesByModules,
+                            moduleCfg.optionalDependencies
+                    ),
                     jdepsExtraArgs.get() as List<String>
             )
             return generatedModuleInfo.path.text

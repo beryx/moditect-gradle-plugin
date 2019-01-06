@@ -26,6 +26,7 @@ import org.gradle.api.tasks.TaskAction
 import org.moditect.commands.AddModuleInfo
 import org.moditect.gradleplugin.Util
 import org.moditect.gradleplugin.add.model.ModuleConfiguration
+import org.moditect.gradleplugin.common.ModuleId
 
 import static org.gradle.util.ConfigureUtil.configure
 
@@ -36,6 +37,9 @@ class AddDependenciesModuleInfoTask extends AbstractAddModuleInfoTask {
     // TODO - make ModuleConfiguration serializable and annotate with @Input
     @Internal
     final Property<ModuleList> modules
+
+    @Internal
+    @Lazy volatile Map<ModuleId, String> assignedNamesByModules = { retrieveAssignedNamesByModules() }()
 
     @ToString(includeNames = true)
     static class ModuleList implements Serializable {
@@ -81,8 +85,21 @@ class AddDependenciesModuleInfoTask extends AbstractAddModuleInfoTask {
                 moduleCfg.version,
                 moduleCfg.inputJar.toPath(),
                 outputDirectory.get().asFile.toPath(),
+                    null, // TODO: jvmVersion
                 overwriteExistingFiles.get()
             ).run()
         }
+    }
+
+    private Map<ModuleId, String> retrieveAssignedNamesByModules() {
+        Map<ModuleId, String> assignedNamesByModule = [:]
+        for (ModuleConfiguration moduleCfg : modules.get().moduleConfigurations) {
+            def name = moduleCfg.moduleName
+            def dep = moduleCfg.primaryDependency
+            if (name && dep) {
+                assignedNamesByModule[new ModuleId(group: dep.group, name: dep.name)] = name
+            }
+        }
+        assignedNamesByModule
     }
 }

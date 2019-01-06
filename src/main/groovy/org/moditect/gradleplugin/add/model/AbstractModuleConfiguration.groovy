@@ -49,20 +49,6 @@ abstract class AbstractModuleConfiguration implements Serializable {
         configure(configureClosure, moduleInfo)
     }
 
-    String getModuleName() {
-        String src = moduleInfoSource ?: moduleInfoFile ? moduleInfoFile.text : null
-        if(src) {
-            for(line in src.readLines()) {
-                def matcher = line =~ /\s*module\s+((?:\w|\.)+).*/
-                if(matcher.matches()) {
-                    return matcher.group(1)
-                }
-            }
-            throw new GradleException("Cannot retrieve module name from: $src")
-        }
-        moduleInfo?.name
-    }
-
     void checkModuleInfo() {
         if([moduleInfo, moduleInfoSource, moduleInfoFile].count { it != null } != 1) {
             throw new GradleException("Exactly one of 'moduleInfo', 'moduleInfoSource', or 'moduleInfoFile' must be specified in $shortName")

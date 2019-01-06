@@ -70,8 +70,6 @@ class CreateRuntimeImageTask extends DefaultTask {
     CreateRuntimeImageTask() {
         description = 'Creates a custom runtime image'
         group = 'moditect'
-        dependsOn ModitectPlugin.GENERATE_MODULE_INFO_TASK_NAME
-        mustRunAfter ModitectPlugin.GENERATE_MODULE_INFO_TASK_NAME
 
         jdkHome = project.objects.property(String)
 
@@ -114,7 +112,7 @@ class CreateRuntimeImageTask extends DefaultTask {
                 outputDirectory.get().asFile.toPath(),
                 compression.get(),
                 stripDebug.get(),
-//                ignoreSigningInformation.get(),
+                ignoreSigningInformation.get(),
                 excludedResources.get() as List<String>,
                 new ModitectLog()
         ).run();

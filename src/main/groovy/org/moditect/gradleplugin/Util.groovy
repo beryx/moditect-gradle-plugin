@@ -28,6 +28,7 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.ListProperty
 import org.gradle.util.GradleVersion
 import org.moditect.commands.GenerateModuleInfo
+import org.moditect.gradleplugin.common.ArtifactDescriptor
 import org.moditect.gradleplugin.common.ModuleId
 import org.moditect.gradleplugin.common.ModuleInfoConfiguration
 import org.moditect.model.DependencePattern
@@ -99,23 +100,15 @@ class Util {
     }
 
     static Set<DependencyDescriptor> getDependencyDescriptors(
-            Configuration cfg,
+            Collection<ArtifactDescriptor> artifactDescriptors,
             Map<ModuleId, String> assignedNamesByModule,
-            Set<ModuleId> optionalDependencies) {
-        cfg.resolvedConfiguration.resolvedArtifacts.collect { artifact ->
-            try {
-                ModuleFinder.of( artifact.file.toPath() ).findAll()
-                def module = artifact.moduleVersion.id.module
-                def optional = optionalDependencies.any { it.name == module.name && it.group == module.group}
-                def assignedModuleName = assignedNamesByModule.get(new ModuleId(group: module.group, name: module.name))
+            Collection<ModuleId> optionalDependencies) {
+        artifactDescriptors.collect { artifact ->
+                def optional = optionalDependencies.any { it.name == artifact.name && it.group == artifact.group}
+                def assignedModuleName = assignedNamesByModule.get(new ModuleId(group: artifact.group, name: artifact.name))
                 return new DependencyDescriptor(artifact.file.toPath(), optional, assignedModuleName)
-            } catch (Exception e) {
-                LOGGER.warn("Ignoring descriptor of: " + artifact.file.name + " due to: $e")
-                return null
-            }
-        }.findAll{ it != null} as Set
+        } as Set
     }
-
     static Configuration getFullConfiguration(Project project) {
         project.configurations.getByName(ModitectPlugin.FULL_CONFIGURATION_NAME)
     }

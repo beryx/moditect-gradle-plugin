@@ -155,10 +155,26 @@ class ModuleConfiguration extends AbstractModuleConfiguration {
                 optionalModuleIds << moduleId
             }
         }
-        // optionalModuleIds.addAll(additionalDependencies)
+        additionalDependencies.each { dep ->
+            optionalModuleIds.add(new ModuleId(dep.group, dep.name))
+        }
         LOGGER.info "optionalDependencies: $optionalDependencies"
         LOGGER.info "moduleIds: $moduleIds"
         LOGGER.info "optionalModuleIds: $optionalModuleIds"
         return optionalModuleIds
+    }
+
+    String getModuleName() {
+        String src = moduleInfoSource ?: moduleInfoFile ? moduleInfoFile.text : null
+        if(src) {
+            for(line in src.readLines()) {
+                def matcher = line =~ /\s*module\s+((?:\w|\.)+).*/
+                if(matcher.matches()) {
+                    return matcher.group(1)
+                }
+            }
+            throw new GradleException("Cannot retrieve module name from: $src")
+        }
+        moduleInfo?.name
     }
 }

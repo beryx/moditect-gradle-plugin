@@ -107,8 +107,8 @@ class DependencyResolver {
         def localRepo = new LocalRepository( "target/local-repo" );
         session.localRepositoryManager = system.newLocalRepositoryManager( session, localRepo )
         session.dependencySelector = new AndDependencySelector(
-                new ScopeDependencySelector("test", "system"),
-                new LevelDependencySelector(3),
+                new ScopeDependencySelector(['compile', 'provided'], ['test', 'system']),
+                new LevelDependencySelector(2),
                 new ExclusionDependencySelector()
         )
         session
