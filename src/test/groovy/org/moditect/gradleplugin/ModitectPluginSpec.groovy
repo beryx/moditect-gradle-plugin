@@ -76,7 +76,7 @@ class ModitectPluginSpec extends Specification {
                 .withPluginClasspath()
                 .withArguments(ModitectPlugin.CREATE_RUNTIME_TASK_NAME, '-is')
                 .build();
-        def imageBinDir = new File(testProjectDir.root, 'build/image/bin')
+        def imageBinDir = new File(testProjectDir.root, "build/$imageDir/bin")
         def launcherExt = OperatingSystem.current.windows ? '.bat' : ''
         def imageLauncher = new File(imageBinDir, "$launcherName$launcherExt")
 
@@ -86,8 +86,9 @@ class ModitectPluginSpec extends Specification {
         imageLauncher.canExecute()
 
         where:
-        projectName | launcherName
-        'undertow'  | 'helloWorld'
+        projectName | imageDir      | launcherName
+        'undertow'  | 'image'       | 'helloWorld'
+        'vert.x'    | 'jlink-image' | 'helloWorld'
     }
 
 }

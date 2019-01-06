@@ -24,7 +24,7 @@ import org.moditect.spi.log.Log
 class ModitectLog implements Log {
     private static final Logger LOGGER = Logging.getLogger(ModitectLog)
 
-    @Override void debug(CharSequence message) { LOGGER.debug(message as String) }
+    @Override void debug(CharSequence message) { LOGGER.info(message as String) }
     @Override void info(CharSequence message) { LOGGER.info(message as String) }
     @Override void warn(CharSequence message) { LOGGER.warn(message as String) }
     @Override void error(CharSequence message) { LOGGER.error(message as String) }

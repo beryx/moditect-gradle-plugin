@@ -37,7 +37,7 @@ moditect {
     addMainModuleInfo {
         version = project.version
         overwriteExistingFiles = false
-        // jdepsExtraArgs = ['-q']
+        jdepsExtraArgs = ['-q']
         module {
             mainClass = mainClassName
             moduleInfo {
@@ -47,7 +47,7 @@ moditect {
         }
     }
     addDependenciesModuleInfo {
-        // jdepsExtraArgs = ['-q']
+        jdepsExtraArgs = ['-q']
         modules {
             module {
                 artifact "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
@@ -122,19 +122,15 @@ moditect {
                 }
             }
             module {
-                artifact "io.netty:netty-transport-epoll:$nettyVersion"
-                moduleInfoSource = '''
-                    module io.netty.channel.epoll {
-                        requires io.netty.buffer;
-                        requires io.netty.channel.unix;
-                        requires io.netty.common;
-                        requires io.netty.transport;
-                        exports io.netty.channel.epoll;
-                    }
-                '''
+                artifact "io.netty:netty-transport-native-epoll:$nettyVersion"
+                moduleInfo {
+                    name = 'io.netty.channel.epoll'
+                }
+
             }
             module {
                 artifact "io.netty:netty-transport-native-kqueue:$nettyVersion"
+                additionalDependency "io.netty:netty-transport-native-unix-common:$nettyVersion"
                 moduleInfo {
                     name = 'io.netty.channel.kqueue'
                 }
@@ -176,7 +172,6 @@ moditect {
             }
             module {
                 artifact "io.vertx:vertx-core:$vertxVersion"
-                additionalDependency ""
                 moduleInfo {
                     name = 'io.vertx.core'
                     requires = '''
