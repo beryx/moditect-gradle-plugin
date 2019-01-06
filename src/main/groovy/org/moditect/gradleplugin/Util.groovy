@@ -133,9 +133,11 @@ class Util {
     }
 
     static String resolveClassifier(String classifier) {
-        if(classifier == '${os.detected.classifier}') {
+        if(classifier && classifier.contains('${os.detected')) {
             def os = new OsDetector()
-            return os.classifier
+            classifier = classifier.replace('${os.detected.classifier}', os.classifier)
+            classifier = classifier.replace('${os.detected.name}', os.os)
+            classifier = classifier.replace('${os.detected.arch}', os.arch)
         }
         classifier
     }
