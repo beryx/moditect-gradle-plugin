@@ -115,7 +115,6 @@ class ModitectExtension {
                         moduleName
                 ).toFile()
             }
-//                project.dependencies.add(ModitectPlugin.FULL_FIXED_CONFIGURATION_NAME, project.files(inputJar))
             descriptors.add(new ArtifactDescriptor(info.group, info.name, inputJar))
         }
         LOGGER.info "assignedNamesByModules: ${assignedNamesByModules.collect {'\n\t' + it}}"

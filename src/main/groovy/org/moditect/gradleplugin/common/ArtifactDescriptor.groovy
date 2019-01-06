@@ -22,4 +22,20 @@ class ArtifactDescriptor {
     String group
     String name
     File file
+
+    boolean equals(o) {
+        if (this.is(o)) return true
+        if (getClass() != o.class) return false
+        ArtifactDescriptor that = (ArtifactDescriptor) o
+        if (group != that.group) return false
+        if (name != that.name) return false
+        return true
+    }
+
+    int hashCode() {
+        int result
+        result = (group != null ? group.hashCode() : 0)
+        result = 31 * result + (name != null ? name.hashCode() : 0)
+        return result
+    }
 }

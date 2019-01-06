@@ -32,12 +32,10 @@ class ModitectPlugin implements Plugin<Project> {
     final static String ADD_MAIN_MODULE_INFO_TASK_NAME = 'addMainModuleInfo'
     final static String ADD_DEPENDENCIES_MODULE_INFO_TASK_NAME = 'addDependenciesModuleInfo'
     final static String FULL_CONFIGURATION_NAME = 'moditectFull'
-//    final static String FULL_FIXED_CONFIGURATION_NAME = 'moditectFullFixed'
 
     @Override
     void apply(Project project) {
         project.configurations.create(FULL_CONFIGURATION_NAME)
-//        project.configurations.create(FULL_FIXED_CONFIGURATION_NAME)
         def ext = project.extensions.create(EXTENSION_NAME, ModitectExtension, project)
         def addMainModuleInfoTask = project.tasks.create(ADD_MAIN_MODULE_INFO_TASK_NAME, AddMainModuleInfoTask)
         def addDependenciesModuleInfoTask = project.tasks.create(ADD_DEPENDENCIES_MODULE_INFO_TASK_NAME, AddDependenciesModuleInfoTask)
