@@ -1,3 +1,7 @@
 #!/bin/bash
 set -ev
-./gradlew --no-daemon -i -s build
+pwd
+env
+ls -al
+ls-al ..
+# ./gradlew --no-daemon -i -s build
