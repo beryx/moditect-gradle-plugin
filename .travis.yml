@@ -8,7 +8,6 @@ jdk:
   - openjdk11
 
 install:
-  - shopt -s extglob
   - chmod a+x ./gradlew
   - chmod a+x ./travis-build.sh
 
