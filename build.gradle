@@ -68,11 +68,24 @@ gradlePlugin {
         }
     }
 }
+pluginBundle {
+    website = 'https://github.com/moditect/moditect-gradle-plugin/'
+    vcsUrl = 'https://github.com/moditect/moditect-gradle-plugin'
+    description = 'A Gradle plugin for ModiTect'
+    tags = ['moditect', 'java9', 'modules', 'jigsaw']
+
+    plugins {
+        moditect {
+            id = 'org.moditect.gradleplugin'
+            displayName = 'ModiTect Gradle Plugin'
+        }
+    }
+}
 
 jar {
     manifest {
         attributes 'Implementation-Title': "${project.archivesBaseName}",
-                'Implementation-Version': version
+                'Implementation-Version': archiveVersion
     }
 }
 
